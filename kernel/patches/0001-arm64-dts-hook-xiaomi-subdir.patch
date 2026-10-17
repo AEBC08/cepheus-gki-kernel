@@ -1,0 +1,21 @@
+From: AEBC08 <743727279@qq.com>
+Subject: arm64: dts: hook xiaomi/ subdir into the dts build
+
+为 cepheus（SM8150）机型设备树提供构建入口。
+
+现有 arch/arm64/boot/dts/Makefile 只列举上游厂商目录；我们的机型 dts 放在
+arch/arm64/boot/dts/xiaomi/（由 kernel/overlay 铺设），需要在此登记才会参与
+`make dtbs`。
+
+注：ACK 5.10 的上游 sm8150 平台 dtsi（arch/arm64/boot/dts/qcom/sm8150.dtsi）
+保持不动；我们的 CAF 平台层放在 xiaomi/ 目录内，通过相对包含使用，
+避免覆盖上游文件。
+
+Signed-off-by: AEBC08 <743727279@qq.com>
+---
+--- a/arch/arm64/boot/dts/Makefile
++++ b/arch/arm64/boot/dts/Makefile
+@@ -31,2 +31,3 @@
+ subdir-y += xilinx
+ subdir-y += zte
++subdir-y += xiaomi

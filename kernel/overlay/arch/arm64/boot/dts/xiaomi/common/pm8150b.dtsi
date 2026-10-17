@@ -1,0 +1,16 @@
+&ibat_lvl0 {
+	temperature = <5500>;
+};
+
+&ibat_lvl1 {
+	temperature = <8000>;
+};
+
+&thermal_zones {
+	pm8150b-wp-therm {
+		disable-thermal-zone;
+	};
+	soc {
+		disable-thermal-zone;
+	};
+};

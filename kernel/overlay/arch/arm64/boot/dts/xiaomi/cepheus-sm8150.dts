@@ -1,0 +1,27 @@
+/*
+ * Xiaomi Mi 9 (cepheus) — SM8150 device tree
+ *
+ * 组装方式说明（见 memory/decisions/D011-cepheus-dts-port.md）：
+ *   1. sm8150.dtsi               CAF 平台层（源自 5.4 前移树 arch/arm64/boot/dts/qcom/）
+ *   2. base/sm8150.dtsi          Xiaomi 平台级覆盖（reserved-memory / ramoops / pil 布局）
+ *   3. cepheus/cepheus-sm8150.dtsi   cepheus 机型层（电池 / 面板 / camera sensor / 充电）
+ *
+ * 与 5.4 树的差异：
+ *   - 5.4 用 Android DT overlay（dtbo）把机型层叠加到 sm8150-xiaomi.dtb 上；
+ *     ACK 5.10 的 dts Makefile 没有 CONFIG_BUILD_ARM64_DT_OVERLAY 机制，
+ *     因此这里改成「单一 dts 顺序 include」，产出普通 dtb。
+ *   - 原 sm8150-xiaomi.dts 里的 `#include "../qcom/sm8150.dtsi"` 改为同目录相对包含，
+ *     平台层文件与本文件放在同一目录，避免覆盖 ACK 自带的 arch/arm64/boot/dts/qcom/sm8150.dtsi。
+ */
+
+/dts-v1/;
+
+#include "sm8150.dtsi"
+#include "base/sm8150.dtsi"
+#include "cepheus/cepheus-sm8150.dtsi"
+
+/ {
+	model = "Xiaomi Mi 9 (cepheus)";
+	compatible = "qcom,sm8150-cdp", "qcom,sm8150", "qcom,cdp";
+	qcom,board-id = <37 0>;
+};
