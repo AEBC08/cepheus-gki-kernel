@@ -3,7 +3,7 @@
  * Copyright (c) 2018-2021, The Linux Foundation. All rights reserved.
  */
 
-#include <dt-bindings/clock/qcom,gcc-sm8150.h>
+#include <dt-bindings/clock/qcom,gcc-sm8150-cepheus.h>
 #include <dt-bindings/phy/qcom,sm8150-qmp-usb3.h>
 
 &soc {

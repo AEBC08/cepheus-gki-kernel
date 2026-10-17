@@ -3,7 +3,7 @@
  * Copyright (c) 2018-2019, The Linux Foundation. All rights reserved.
  */
 
-#include <dt-bindings/clock/qcom,gcc-sm8150.h>
+#include <dt-bindings/clock/qcom,gcc-sm8150-cepheus.h>
 
 &soc {
 	pcie0: qcom,pcie@1c00000 {

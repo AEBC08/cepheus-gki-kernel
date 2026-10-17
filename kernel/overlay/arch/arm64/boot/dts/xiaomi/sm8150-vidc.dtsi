@@ -4,7 +4,7 @@
  */
 
 #include <dt-bindings/interrupt-controller/arm-gic.h>
-#include <dt-bindings/clock/qcom,videocc-sm8150.h>
+#include <dt-bindings/clock/qcom,videocc-sm8150-cepheus.h>
 
 &soc {
 	msm_vidc: qcom,vidc@aa00000 {
