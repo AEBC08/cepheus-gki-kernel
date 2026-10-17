@@ -24,7 +24,7 @@ on:
       targets:
         description: 'make 目标（空格分隔）'
         required: false
-        default: 'Image'
+        default: 'Image dtbs'
       ccache:
         description: '启用 ccache（1/0）'
         required: false
