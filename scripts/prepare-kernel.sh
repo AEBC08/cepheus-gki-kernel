@@ -56,9 +56,37 @@ main() {
 
   reset_tree
   apply_overlay
+  sanity_check_overlay
   apply_patches "${patches[@]+"${patches[@]}"}"
   write_prep_info "${#patches[@]}"
   log "完成"
+}
+
+# 防呆：overlay 里若存在「404: Not Found」这类 HTTP 错误体（曾因 curl 批量下载踩到），
+# dtc 会在解析时报 1.1-4 syntax error，浪费一整轮 CI。这里提前拦住。
+sanity_check_overlay() {
+  [ -d "${OVERLAY_DIR}" ] || return 0
+
+  local bad=0 f first len
+  while IFS= read -r f; do
+    len=$(wc -c < "${f}" | tr -d ' ')
+    first=$(head -n1 -- "${f}" 2>/dev/null || true)
+    case "${first}" in
+      404:*|"<!DOCTYPE"*|"<html"*)
+        warn "疑似 HTTP 错误体：${f}（首行：${first}）"
+        bad=$((bad + 1))
+        ;;
+    esac
+    if [ "${len}" -lt 120 ]; then
+      warn "文件过小（${len} B），疑似下载失败：${f}"
+      bad=$((bad + 1))
+    fi
+  done < <(find "${OVERLAY_DIR}" -type f)
+
+  if [ "${bad}" -gt 0 ]; then
+    die "overlay 中发现 ${bad} 个可疑文件，请重新获取后再构建"
+  fi
+  log "overlay 内容检查通过"
 }
 
 # 收集 patch，按文件名排序（约定：文件名前缀 000N- 表示顺序）
