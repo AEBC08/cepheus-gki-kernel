@@ -53,7 +53,7 @@ jobs:
           path: |
             src/kernel
             src/techpack
-          key: src-ack-${{ inputs.ack_sha || 'head' }}-${{ github.run_id }}
+          key: src-ack-${{ inputs.ack_sha || vars.ACK_SHA || 'head' }}-v1
           restore-keys: |
             src-ack-${{ inputs.ack_sha || 'head' }}-
             src-ack-

@@ -1,10 +1,11 @@
 # 构建 cepheus GKI(5.10) 内核并上传产物。
 #
-# 设计依据：memory/decisions/D006-ci-and-build-pipeline.md
-#   - runner: ubuntu-22.04（自带 clang 14，匹配 5.10 世代）
-#   - 工具链第一级用系统 clang；第二级切 AOSP 预编译 clang（见 ADR 复核触发）
+# 设计依据：
+#   - memory/decisions/D006-ci-and-build-pipeline.md（runner 与工具链分级）
+#   - memory/decisions/D008-bringup-lto-and-cache.md（关 full LTO + 内容寻址缓存键）
 #
-# 落点：本仓库的 `.github/workflows/`；内核仓库建立后迁入内核仓库（那时 checkout 的即是内核树）。
+# 缓存键约定：**不含 run_id**。actions/cache 条目不可变，带 run_id 会导致每轮新建
+# 约 1 GB 条目并迅速耗尽 10 GB 配额，从而"每轮重新下载"。需要强制重建时把 v1 递增。
 
 name: kernel-build
 
@@ -16,9 +17,9 @@ on:
         required: false
         default: 'gki_defconfig'
       device_configs:
-        description: '逗号分隔的 config 片段（如 vendor/cepheus.config）'
+        description: '逗号分隔的 config 片段（相对仓库根或 arch/arm64/configs）'
         required: false
-        default: ''
+        default: 'config/bringup-no-lto.config'
       targets:
         description: 'make 目标（空格分隔）'
         required: false
@@ -43,7 +44,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
         with:
-          # 内核树体量大，浅克隆即可；需要完整历史时改 0
           fetch-depth: 1
 
       - name: 释放磁盘空间
@@ -66,11 +66,11 @@ jobs:
           clang --version | head -n1
           ld.lld --version | head -n1
 
-      - name: 准备 ccache
+      - name: 恢复 ccache
         uses: actions/cache@v4
         with:
           path: ~/.ccache
-          key: ccache-${{ github.sha }}
+          key: ccache-v1
           restore-keys: |
             ccache-
 
@@ -78,7 +78,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: out
-          key: out-${{ github.run_id }}
+          key: out-v1
           restore-keys: |
             out-
 
@@ -88,7 +88,7 @@ jobs:
           path: |
             src/kernel
             src/techpack
-          key: src-ack-${{ vars.ACK_SHA || 'head' }}-${{ github.run_id }}
+          key: src-ack-${{ vars.ACK_SHA || 'head' }}-v1
           restore-keys: |
             src-ack-${{ vars.ACK_SHA || 'head' }}-
             src-ack-
@@ -107,7 +107,7 @@ jobs:
       - name: 构建
         env:
           DEFCONFIG: ${{ inputs.defconfig || 'gki_defconfig' }}
-          DEVICE_CONFIGS: ${{ inputs.device_configs || '' }}
+          DEVICE_CONFIGS: ${{ inputs.device_configs || 'config/bringup-no-lto.config' }}
           TARGETS: ${{ inputs.targets || 'Image' }}
           CCACHE: ${{ inputs.ccache || '1' }}
           JOBS: 4
