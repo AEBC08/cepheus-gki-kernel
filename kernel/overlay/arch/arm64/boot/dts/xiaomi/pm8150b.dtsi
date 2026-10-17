@@ -163,7 +163,7 @@
 		pm8150b_charger: qcom,qpnp-smb5 {
 			compatible = "qcom,pm8150-smb5";
 			#address-cells = <1>;
-			#size-cells = <1>;
+			#size-cells = <0>;
 			#cooling-cells = <2>;
 			#io-channel-cells = <1>;
 
@@ -448,7 +448,7 @@
 		pm8150b_fg: qpnp,fg {
 			compatible = "qcom,fg-gen4";
 			#address-cells = <1>;
-			#size-cells = <1>;
+			#size-cells = <0>;
 			qcom,pmic-revid = <&pm8150b_revid>;
 			qcom,pmic-pbs = <&pm8150b_pbs1>;
 			status = "okay";
