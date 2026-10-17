@@ -11,9 +11,9 @@
  * GNU General Public License for more details.
  */
 
-#include <dt-bindings/spmi/spmi.h>
-#include <dt-bindings/interrupt-controller/irq.h>
-#include <dt-bindings/iio/qcom,spmi-vadc.h>
+#include <dt-bindings/spmi/spmi-cepheus.h>
+#include <dt-bindings/interrupt-controller/irq-cepheus.h>
+#include <dt-bindings/iio/qcom,spmi-vadc-cepheus.h>
 
 &spmi_bus {
 	#address-cells = <2>;

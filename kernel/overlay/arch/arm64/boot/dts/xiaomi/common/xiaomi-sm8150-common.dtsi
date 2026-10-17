@@ -10,8 +10,8 @@
  * GNU General Public License for more details.
  */
 
-#include <dt-bindings/gpio/gpio.h>
-#include <dt-bindings/input/input.h>
+#include <dt-bindings/gpio/gpio-cepheus.h>
+#include <dt-bindings/input/input-cepheus.h>
 
 #include "sm8150-pmic-overlay.dtsi"
 #include "xiaomi_sm8150-sde-display.dtsi"

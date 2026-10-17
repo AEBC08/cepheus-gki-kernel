@@ -10,7 +10,7 @@
  * GNU General Public License for more details.
  */
 
-#include <dt-bindings/interrupt-controller/irq.h>
+#include <dt-bindings/interrupt-controller/irq-cepheus.h>
 
 smb1390: qcom,smb1390@10 {
 	compatible = "qcom,i2c-pmic";

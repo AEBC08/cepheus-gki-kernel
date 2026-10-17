@@ -13,15 +13,15 @@
 #include <dt-bindings/interconnect/qcom,osm-l3-cepheus.h>
 #include <dt-bindings/interconnect/qcom,sm8150-cepheus.h>
 #include <dt-bindings/clock/qcom,npucc-sm8150.h>
-#include <dt-bindings/gpio/gpio.h>
+#include <dt-bindings/gpio/gpio-cepheus.h>
 #include <dt-bindings/clock/qcom,rpmh-cepheus.h>
 #include <dt-bindings/sound/qcom,gpr.h>
 #include <dt-bindings/clock/qcom,aop-qmp.h>
 #include <dt-bindings/regulator/qcom,rpmh-regulator-levels.h>
-#include <dt-bindings/interrupt-controller/arm-gic.h>
+#include <dt-bindings/interrupt-controller/arm-gic-cepheus.h>
 #include <dt-bindings/soc/qcom,rpmh-rsc-cepheus.h>
 #include <dt-bindings/soc/qcom,dcc_v2.h>
-#include <dt-bindings/spmi/spmi.h>
+#include <dt-bindings/spmi/spmi-cepheus.h>
 
 #define MHZ_TO_MBPS(mhz, w) ((mhz * 1000000 * w) / (1024 * 1024))
 #define BW_OPP_ENTRY(mhz, w) opp-mhz {opp-hz = /bits/ 64 <MHZ_TO_MBPS(mhz, w)>;}
