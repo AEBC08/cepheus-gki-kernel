@@ -209,6 +209,12 @@ write_build_info() {
     printf 'config_sha256= %s\n' "${cfg_sha}"
     printf 'toolchain    = %s\n' "${clang_ver}"
     printf 'make_command = %s\n' "${make_cmd}"
+    if [ -f "${KERNEL_DIR}/.cepheus-prep" ]; then
+      printf 'prep:\n'
+      sed 's/^/  /' "${KERNEL_DIR}/.cepheus-prep"
+    else
+      printf 'prep         = <未运行 prepare-kernel.sh>\n'
+    fi
     printf 'pins         = %s\n' "$( [ -f "${REPO_ROOT}/src/techpack/PINS.txt" ] && echo "见 src/techpack/PINS.txt" || echo "无（未拉取 techpack）")"
   } > "${info}"
 

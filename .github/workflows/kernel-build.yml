@@ -105,6 +105,11 @@ jobs:
           set -euo pipefail
           bash scripts/fetch-sources.sh
 
+      - name: 准备内核改动（overlay + patches）
+        run: |
+          set -euo pipefail
+          bash scripts/prepare-kernel.sh
+
       - name: 构建前资源快照
         run: |
           set -euo pipefail
