@@ -10,10 +10,10 @@
 | Q004 | 是否接受"非 Google KMI 认证的 GKI"（允许维护自有 symlist） | 建议接受（待确认） | 见 D003 |
 | Q005 | 相机策略：保留 4.14 CAMX 的 UAPI 语义（`cam_sync`/ioctl）还是跟随新 cam 栈 | **待决** | 影响 techpack/camera 移植方向；可延后到 S2 |
 | Q006 | 模块落地位置：纯 `/vendor/lib/modules` + vendor `init` modprobe，还是用 super 动态分区模拟 `vendor_dlkm` | **待决** | Mi 9 无 `vendor_boot`/`vendor_dlkm` 物理分区；建议先用前者 |
-| Q007 | 代码托管：项目控制仓库放哪里（本地 git / GitHub 公开库 / 私库） | **待决（当前阻塞 S1）** | 已 `git init` 并暂存全部文件，但本机无 git 身份配置故未提交；需用户给出 GitHub 仓库地址或授权 |
+| Q007 | 代码托管：项目控制仓库放哪里 | **已决(见 D007)** | 已推送至公开仓库 `AEBC08/cepheus-gki-kernel`，默认分支 `main` |
 | Q008 | S1 首启验证用哪个 ROM 组合：crDroid 17.0 还是直接 Infinity X | **待决** | 5.4 作者已验证 HyperOS 2，类原生理论上更简单；建议先用 crDroid 17.0 收敛 |
 | Q009 | 屏幕/面板变体：cepheus 有多套 EA8076 面板 dtsi（f1/f1mp/f1p2 等），是否需要运行时判定 | **待决（S1 调研）** | 影响 DTS 与 DTBO 组织方式 |
-| Q010 | 推送认证：A 用户给 fine-grained PAT / B 用户 `gh auth login` / C 用户自行 push | **待决（阻塞推送）** | 本机无 gh/token/credential helper/SSH key，且 `github.com:22` 被拒、`api.github.com` 时通时超时；见 D007 |
+| Q010 | 推送认证：A 用户给 fine-grained PAT / B 用户 `gh auth login` / C 用户自行 push | **已决(见 D007)** | 未用 A/B/C：本机 GCM 已有缓存凭据（system 级 `credential.helper=manager`，我在第一轮只查了 global），故由 PI-Desktop 直接建仓并推送 |
 
 ## 处理规则
 
