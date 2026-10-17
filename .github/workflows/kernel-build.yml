@@ -81,6 +81,28 @@ jobs:
           restore-keys: |
             out-
 
+      - name: 恢复源码树缓存
+        uses: actions/cache@v4
+        with:
+          path: |
+            src/kernel
+            src/techpack
+          key: src-ack-${{ vars.ACK_SHA || 'head' }}-${{ github.run_id }}
+          restore-keys: |
+            src-ack-${{ vars.ACK_SHA || 'head' }}-
+            src-ack-
+
+      - name: 拉取源码（缓存未命中时）
+        env:
+          ACK_SHA: ${{ vars.ACK_SHA }}
+          TECH_BRANCH_DISPLAY: ${{ vars.TECH_BRANCH_DISPLAY }}
+          TECH_BRANCH_AUDIO: ${{ vars.TECH_BRANCH_AUDIO }}
+          TECH_BRANCH_CAMERA: ${{ vars.TECH_BRANCH_CAMERA }}
+          TECH_BRANCH_VIDEO: ${{ vars.TECH_BRANCH_VIDEO }}
+        run: |
+          set -euo pipefail
+          bash scripts/fetch-sources.sh
+
       - name: 构建
         env:
           DEFCONFIG: ${{ inputs.defconfig || 'gki_defconfig' }}
