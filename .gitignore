@@ -1,5 +1,7 @@
-# 内核源码工作区（单独 git 仓库，不入本仓库）
-/src/
+# 内核源码工作区：源码由 CI 拉取（scripts/fetch-sources.sh），不入 git。
+# 只忽略实际存放源码的两个子目录，使 src/README.md 这类说明文件可以入库。
+/src/kernel/
+/src/techpack/
 
 # 构建产物
 out/

@@ -1,9 +1,9 @@
-# 拉取 ACK 5.10 底板 + CAF techpack，并产出 PINS 与文件清单。
+# 拉取 ACK 5.10 底板 + CAF techpack，产出 PINS 与文件清单，并（可选）发布源码快照。
 #
-# 存在理由（见 memory/decisions/D006-ci-and-build-pipeline.md）：
-#   本机网络无法稳定拉取 ~200MB 的 kernel pack，源码获取一律在 runner 上完成。
-#
-# 落点：本仓库的 `.github/workflows/`。内核仓库建立后，本文件连同 scripts/ 一起迁入内核仓库。
+# 存在理由（见 memory/decisions/D006-ci-and-build-pipeline.md、D008）：
+#   1. 本机网络无法稳定拉取 ~200MB 的 kernel pack，源码获取一律在 runner 上完成。
+#   2. 缓存键**不含 run_id**（内容寻址），避免每轮新建 ~1GB 缓存条目。
+#   3. 需要"项目里有一份真源码"时，用 Release 资源承载快照，不污染 git 历史。
 
 name: bootstrap-sources
 
@@ -22,14 +22,18 @@ on:
         description: 'techpack 拉取失败是否视为失败（1/0）'
         required: false
         default: '0'
+      publish_snapshot:
+        description: '把源码快照发布为 Release 资源（1/0）'
+        required: false
+        default: '1'
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   fetch:
     runs-on: ubuntu-22.04
-    timeout-minutes: 90
+    timeout-minutes: 120
 
     steps:
       - name: Checkout 控制仓库
@@ -77,7 +81,6 @@ jobs:
           grep -E '^(VERSION|PATCHLEVEL|SUBLEVEL) =' src/kernel/Makefile
           echo "== PINS =="
           cat src/techpack/PINS.txt
-          echo "== 结构抽查 =="
           test -d src/kernel/arch/arm64
           test -f src/kernel/arch/arm64/configs/gki_defconfig
           echo "gki_defconfig 存在"
@@ -87,7 +90,38 @@ jobs:
           set -euo pipefail
           git -C src/kernel ls-tree -r --name-only HEAD | sort > kernel-files.txt
           wc -l kernel-files.txt
-          ls -la src/techpack
+
+      - name: 打包源码快照
+        if: inputs.publish_snapshot == '1'
+        run: |
+          set -euo pipefail
+          ACK_SHA=$(awk '$1 == "ack" {print $4}' src/techpack/PINS.txt)
+          if [ -z "${ACK_SHA}" ]; then
+            echo "未能从 PINS.txt 解析 ACK SHA" >&2
+            exit 1
+          fi
+          SNAP="ack-5.10-${ACK_SHA:0:12}.tar.zst"
+          echo "ACK_SHA=${ACK_SHA}" >> "$GITHUB_ENV"
+          echo "SNAP=${SNAP}"     >> "$GITHUB_ENV"
+          command -v zstd >/dev/null 2>&1 || sudo apt-get install -y --no-install-recommends zstd
+          tar --use-compress-program='zstd -3 -T0' -cf "${SNAP}" -C src kernel techpack
+          ls -lh "${SNAP}"
+
+      - name: 发布源码快照为 Release 资源
+        if: inputs.publish_snapshot == '1'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          TAG="sources-${ACK_SHA:0:12}"
+          if gh release view "${TAG}" >/dev/null 2>&1; then
+            echo "Release ${TAG} 已存在，覆盖上传"
+            gh release upload "${TAG}" "${SNAP}" --clobber
+          else
+            gh release create "${TAG}" "${SNAP}" \
+              --title "ACK 5.10 源码快照 ${ACK_SHA:0:12}" \
+              --notes "由 bootstrap-sources 生成。内含 kernel/（ACK android12-5.10）与 techpack/（CAF vendor 驱动 staging，含 PINS.txt）。仅作源码快照，不进入 git 历史。"
+          fi
 
       - name: 上传元数据
         uses: actions/upload-artifact@v4
