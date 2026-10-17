@@ -229,7 +229,6 @@ collect_artifacts() {
     "${boot_dir}/dtbo.img"
     "${OUT_DIR}/System.map"
     "${OUT_DIR}/Module.symvers"
-    "${OUT_DIR}/.config"
   )
 
   local item
@@ -243,6 +242,12 @@ collect_artifacts() {
   # dtb 目录整体打包，便于核对设备树是否生成
   if [ -d "${boot_dir}/dts" ]; then
     ( cd "${boot_dir}" && tar -czf "${ARTIFACT_DIR}/dts.tar.gz" dts )
+    copied=$((copied + 1))
+  fi
+
+  # .config 另存为非隐藏名：actions/upload-artifact 默认不上传隐藏文件（run #6 踩到）
+  if [ -f "${OUT_DIR}/.config" ]; then
+    cp -f -- "${OUT_DIR}/.config" "${ARTIFACT_DIR}/kernel.config"
     copied=$((copied + 1))
   fi
 
