@@ -2,10 +2,11 @@
 #
 # 设计依据：
 #   - memory/decisions/D006-ci-and-build-pipeline.md（runner 与工具链分级）
-#   - memory/decisions/D008-bringup-lto-and-cache.md（关 full LTO + 内容寻址缓存键）
+#   - memory/decisions/D008-bringup-lto-and-cache.md（缓存键内容寻址）
+#   - memory/decisions/D009-bringup-config-fix.md（bring-up 关掉 LTO/CFI/KASAN/DEBUG_INFO）
 #
 # 缓存键约定：**不含 run_id**。actions/cache 条目不可变，带 run_id 会导致每轮新建
-# 约 1 GB 条目并迅速耗尽 10 GB 配额，从而"每轮重新下载"。需要强制重建时把 v1 递增。
+# 约 1 GB 条目并迅速耗尽 10 GB 配额。需要强制重建时把 v1 递增。
 
 name: kernel-build
 
@@ -19,7 +20,7 @@ on:
       device_configs:
         description: '逗号分隔的 config 片段（相对仓库根或 arch/arm64/configs）'
         required: false
-        default: 'config/bringup-no-lto.config'
+        default: 'config/bringup-lite.config'
       targets:
         description: 'make 目标（空格分隔）'
         required: false
@@ -104,24 +105,36 @@ jobs:
           set -euo pipefail
           bash scripts/fetch-sources.sh
 
+      - name: 构建前资源快照
+        run: |
+          set -euo pipefail
+          echo "== vCPU ==";        nproc
+          echo "== 内存 ==";        free -m
+          echo "== 磁盘 ==";        df -h /
+          echo "== 源码体积 ==";    du -sh src/kernel src/techpack 2>/dev/null || true
+
       - name: 构建
         env:
           DEFCONFIG: ${{ inputs.defconfig || 'gki_defconfig' }}
-          DEVICE_CONFIGS: ${{ inputs.device_configs || 'config/bringup-no-lto.config' }}
+          DEVICE_CONFIGS: ${{ inputs.device_configs || 'config/bringup-lite.config' }}
           TARGETS: ${{ inputs.targets || 'Image' }}
           CCACHE: ${{ inputs.ccache || '1' }}
           JOBS: 4
         run: |
           set -euo pipefail
           export CCACHE_DIR="${HOME}/.ccache"
+          export CCACHE_MAXSIZE=2G
           bash scripts/build-kernel.sh
 
       - name: 显示产物
         if: always()
         run: |
           set -euo pipefail
+          echo "== 磁盘 =="; df -h /
           ls -laR out/artifacts || true
           cat out/artifacts/build-info.txt || true
+          echo "== LTO/KASAN/DEBUG_INFO 相关配置（核对 bring-up 片段是否生效） =="
+          grep -E 'CONFIG_(LTO_NONE|LTO_CLANG_FULL|LTO_CLANG_THIN|CFI_CLANG|KASAN|DEBUG_INFO)=' out/.config || true
 
       - name: 上传产物
         if: success()

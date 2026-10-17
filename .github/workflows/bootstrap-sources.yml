@@ -104,8 +104,16 @@ jobs:
           echo "ACK_SHA=${ACK_SHA}" >> "$GITHUB_ENV"
           echo "SNAP=${SNAP}"     >> "$GITHUB_ENV"
           command -v zstd >/dev/null 2>&1 || sudo apt-get install -y --no-install-recommends zstd
-          tar --use-compress-program='zstd -3 -T0' -cf "${SNAP}" -C src kernel techpack
+          echo "== 未压缩体积 =="
+          du -sh src/kernel src/techpack
+          echo "== 源文件数（不含 .git） =="
+          find src/kernel src/techpack -type f -not -path '*/.git/*' | wc -l
+          # 排除 .git：浅克隆的 pack 压缩率极低，会把快照撑大近一倍（见 F006）
+          tar --exclude='.git' --use-compress-program='zstd -3 -T0' -cf "${SNAP}" -C src kernel techpack
+          echo "== 快照 =="
           ls -lh "${SNAP}"
+          echo "== 快照内条目数 =="
+          tar -tf "${SNAP}" | wc -l
 
       - name: 发布源码快照为 Release 资源
         if: inputs.publish_snapshot == '1'
