@@ -22,7 +22,7 @@
 #   DEVICE_CONFIGS ()                                 逗号分隔的 config 片段（相对上述目录或绝对路径）
 #   TARGETS        (Image)                            空格分隔的 make 目标，如 "Image dtbs"
 #   USE_LLVM       (1)                                1=LLVM=1 LLVM_IAS=1；0=用 CROSS_COMPILE
-#   CROSS_COMPILE  (aarch64-linux-gnu-)               USE_LLVM=0 时使用
+#   CROSS_COMPILE  (aarch64-linux-gnu-)               USE_LLVM=1 时用于推导 clang --target；=0 时作为实际交叉前缀
 #   CCACHE         (0)                                1=用 ccache 包装 clang（CI 增量构建）
 #   ALLOW_MISMATCH (0)                                1=允许内核主/次版本不是 5.10（不推荐）
 #
@@ -81,7 +81,9 @@ main() {
 
   local -a make_args=("ARCH=${ARCH}" "O=${OUT_DIR}")
   if [ "${USE_LLVM}" -eq 1 ]; then
-    make_args+=("LLVM=1" "LLVM_IAS=1")
+    # Linux 5.10 从 CROSS_COMPILE 推导 clang 的 --target 三元组；只给 LLVM=1 会让
+    # clang 退回宿主机(x86_64)目标，编 arm64 内联汇编时报 unknown register name 'x0'。
+    make_args+=("LLVM=1" "LLVM_IAS=1" "CROSS_COMPILE=${CROSS_COMPILE}")
     if [ "${CCACHE}" -eq 1 ]; then
       command -v ccache >/dev/null 2>&1 || die "CCACHE=1 但未找到 ccache"
       make_args+=("CC=ccache clang")
