@@ -13,6 +13,7 @@
 | Q007 | 代码托管：项目控制仓库放哪里（本地 git / GitHub 公开库 / 私库） | **待决（当前阻塞 S1）** | 已 `git init` 并暂存全部文件，但本机无 git 身份配置故未提交；需用户给出 GitHub 仓库地址或授权 |
 | Q008 | S1 首启验证用哪个 ROM 组合：crDroid 17.0 还是直接 Infinity X | **待决** | 5.4 作者已验证 HyperOS 2，类原生理论上更简单；建议先用 crDroid 17.0 收敛 |
 | Q009 | 屏幕/面板变体：cepheus 有多套 EA8076 面板 dtsi（f1/f1mp/f1p2 等），是否需要运行时判定 | **待决（S1 调研）** | 影响 DTS 与 DTBO 组织方式 |
+| Q010 | 推送认证：A 用户给 fine-grained PAT / B 用户 `gh auth login` / C 用户自行 push | **待决（阻塞推送）** | 本机无 gh/token/credential helper/SSH key，且 `github.com:22` 被拒、`api.github.com` 时通时超时；见 D007 |
 
 ## 处理规则
 
