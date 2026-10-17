@@ -1,0 +1,49 @@
+# 内核源码工作区（单独 git 仓库，不入本仓库）
+/src/
+
+# 构建产物
+out/
+build/
+*.o
+*.o.*
+*.ko
+*.mod
+*.mod.c
+*.cmd
+*.a
+Image
+Image.gz
+Image.lz4
+Image.gz-dtb
+vmlinux
+System.map
+*.dtb
+*.dtbo
+*.img
+modules.order
+Module.symvers
+.config
+.config.old
+
+# 工具链 / 缓存
+ccache/
+toolchain/
+prebuilts/
+*.tar.gz
+*.tar.xz
+*.zip
+
+# 本地环境
+.env
+.env.local
+*.local.md
+.venv/
+__pycache__/
+*.pyc
+
+# 编辑器 / 系统
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+desktop.ini

@@ -1,0 +1,99 @@
+# 拉取 ACK 5.10 底板 + CAF techpack，并产出 PINS 与文件清单。
+#
+# 存在理由（见 memory/decisions/D006-ci-and-build-pipeline.md）：
+#   本机网络无法稳定拉取 ~200MB 的 kernel pack，源码获取一律在 runner 上完成。
+#
+# 落点：本仓库的 `.github/workflows/`。内核仓库建立后，本文件连同 scripts/ 一起迁入内核仓库。
+
+name: bootstrap-sources
+
+on:
+  workflow_dispatch:
+    inputs:
+      ack_sha:
+        description: '要固定的 ACK commit（留空 = 分支 HEAD）'
+        required: false
+        default: ''
+      tech_display_branch:
+        description: 'CAF display-drivers 分支'
+        required: false
+        default: 'display-kernel.lnx.5.10.r8-rel'
+      tech_required:
+        description: 'techpack 拉取失败是否视为失败（1/0）'
+        required: false
+        default: '0'
+
+permissions:
+  contents: read
+
+jobs:
+  fetch:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 90
+
+    steps:
+      - name: Checkout 控制仓库
+        uses: actions/checkout@v4
+
+      - name: 释放磁盘空间
+        run: |
+          set -euo pipefail
+          df -h /
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc \
+                      /usr/local/share/boost "$AGENT_TOOLSDIRECTORY" || true
+          df -h /
+
+      - name: 准备缓存目录
+        run: mkdir -p src
+
+      - name: 恢复源码缓存
+        id: src-cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            src/kernel
+            src/techpack
+          key: src-ack-${{ inputs.ack_sha || 'head' }}-${{ github.run_id }}
+          restore-keys: |
+            src-ack-${{ inputs.ack_sha || 'head' }}-
+            src-ack-
+
+      - name: 拉取源码
+        env:
+          ACK_SHA: ${{ inputs.ack_sha }}
+          TECH_BRANCH_DISPLAY: ${{ inputs.tech_display_branch }}
+          TECH_BRANCH_AUDIO: ${{ vars.TECH_BRANCH_AUDIO }}
+          TECH_BRANCH_CAMERA: ${{ vars.TECH_BRANCH_CAMERA }}
+          TECH_BRANCH_VIDEO: ${{ vars.TECH_BRANCH_VIDEO }}
+          TECH_REQUIRED: ${{ inputs.tech_required }}
+        run: |
+          set -euo pipefail
+          bash scripts/fetch-sources.sh
+
+      - name: 校验源码树
+        run: |
+          set -euo pipefail
+          echo "== 内核版本 =="
+          grep -E '^(VERSION|PATCHLEVEL|SUBLEVEL) =' src/kernel/Makefile
+          echo "== PINS =="
+          cat src/techpack/PINS.txt
+          echo "== 结构抽查 =="
+          test -d src/kernel/arch/arm64
+          test -f src/kernel/arch/arm64/configs/gki_defconfig
+          echo "gki_defconfig 存在"
+
+      - name: 生成文件清单
+        run: |
+          set -euo pipefail
+          git -C src/kernel ls-tree -r --name-only HEAD | sort > kernel-files.txt
+          wc -l kernel-files.txt
+          ls -la src/techpack
+
+      - name: 上传元数据
+        uses: actions/upload-artifact@v4
+        with:
+          name: source-metadata
+          retention-days: 14
+          path: |
+            src/techpack/PINS.txt
+            kernel-files.txt

@@ -1,0 +1,109 @@
+# 构建 cepheus GKI(5.10) 内核并上传产物。
+#
+# 设计依据：memory/decisions/D006-ci-and-build-pipeline.md
+#   - runner: ubuntu-22.04（自带 clang 14，匹配 5.10 世代）
+#   - 工具链第一级用系统 clang；第二级切 AOSP 预编译 clang（见 ADR 复核触发）
+#
+# 落点：本仓库的 `.github/workflows/`；内核仓库建立后迁入内核仓库（那时 checkout 的即是内核树）。
+
+name: kernel-build
+
+on:
+  workflow_dispatch:
+    inputs:
+      defconfig:
+        description: 'defconfig 名称（相对 arch/arm64/configs）'
+        required: false
+        default: 'gki_defconfig'
+      device_configs:
+        description: '逗号分隔的 config 片段（如 vendor/cepheus.config）'
+        required: false
+        default: ''
+      targets:
+        description: 'make 目标（空格分隔）'
+        required: false
+        default: 'Image'
+      ccache:
+        description: '启用 ccache（1/0）'
+        required: false
+        default: '1'
+  push:
+    branches:
+      - cepheus-5.10
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 180
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          # 内核树体量大，浅克隆即可；需要完整历史时改 0
+          fetch-depth: 1
+
+      - name: 释放磁盘空间
+        run: |
+          set -euo pipefail
+          df -h /
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc \
+                      /usr/local/share/boost "$AGENT_TOOLSDIRECTORY" || true
+          df -h /
+
+      - name: 安装构建依赖
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            clang lld llvm \
+            bc bison flex libssl-dev libelf-dev \
+            cpio kmod rsync zip xz-utils ccache
+          clang --version | head -n1
+          ld.lld --version | head -n1
+
+      - name: 准备 ccache
+        uses: actions/cache@v4
+        with:
+          path: ~/.ccache
+          key: ccache-${{ github.sha }}
+          restore-keys: |
+            ccache-
+
+      - name: 恢复增量构建目录
+        uses: actions/cache@v4
+        with:
+          path: out
+          key: out-${{ github.run_id }}
+          restore-keys: |
+            out-
+
+      - name: 构建
+        env:
+          DEFCONFIG: ${{ inputs.defconfig || 'gki_defconfig' }}
+          DEVICE_CONFIGS: ${{ inputs.device_configs || '' }}
+          TARGETS: ${{ inputs.targets || 'Image' }}
+          CCACHE: ${{ inputs.ccache || '1' }}
+          JOBS: 4
+        run: |
+          set -euo pipefail
+          export CCACHE_DIR="${HOME}/.ccache"
+          bash scripts/build-kernel.sh
+
+      - name: 显示产物
+        if: always()
+        run: |
+          set -euo pipefail
+          ls -laR out/artifacts || true
+          cat out/artifacts/build-info.txt || true
+
+      - name: 上传产物
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: kernel-cepheus-5.10-${{ github.run_number }}
+          retention-days: 30
+          path: out/artifacts/
