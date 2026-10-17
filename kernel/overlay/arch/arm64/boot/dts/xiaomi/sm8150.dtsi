@@ -2367,6 +2367,8 @@
 		};
 
 		glink_adsp: adsp {
+			#address-cells = <1>;
+			#size-cells = <0>;
 			qcom,remote-pid = <2>;
 			transport = "smem";
 			mboxes = <&apcs_glb 8>;
@@ -2390,6 +2392,8 @@
 			};
 
 			qcom,gpr {
+				#address-cells = <1>;
+				#size-cells = <0>;
 				compatible = "qcom,gpr";
 				qcom,glink-channels = "to_apps";
 				qcom,intents = <0x200 20>;
