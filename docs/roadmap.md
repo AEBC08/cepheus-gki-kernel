@@ -24,7 +24,11 @@
 4. 首启验证，收集 `dmesg`/`pstore`。
 
 **验收**
-- [ ] 同一份 `Image` 能编出 `Image.gz`、`dtb.img`、`dtbo.img`，且 `build-info.txt` 记录源码 commit + toolchain 版本
+- [x] 同一份 `Image` 能编出 `Image.gz`、`dtb.img`、`dtbo.img`，且 `build-info.txt` 记录源码 commit + toolchain 版本
+      （实际形态：`Image` + `cepheus-sm8150.dtb`；`dtb.img`/`dtbo.img` 的打包属 ROM 侧，本轮未做）
+- [x] 内核改动的承载机制就位：`kernel/overlay` + `kernel/patches` + `prepare-kernel.sh`（幂等，含 404 防呆）
+- [x] cepheus DTS 在 CI 编出 `cepheus-sm8150.dtb`（run #12），且不影响上游 `sm8150-mtp.dtb`
+- [ ] 31 条 `reg_format` 告警校正（R15，S2 点亮 SPMI 子设备前必须做）
 - [ ] 实机出现内核日志（UART/pstore/最后内核日志），能定位卡在哪一个驱动
 - [ ] 刷回 4.14 `boot.img` 可完整恢复（回退验证必须做，且记录）
 - [ ] `scripts/checkpatch.pl --strict` 对我们新增/修改的提交 0 error

@@ -18,6 +18,7 @@
 | R12 | **`Image` 体积超 boot 分区** | 低中 | 单体 + LTO 关闭时体积上升 | 实测 boot 分区大小；超限则提前模块化或启用 LTO | S1 末 |
 | R13 | **本机网络承载力**：~200 MB 级 git pack 稳定中断（两次实测） | 中 | D006 背景 / F003 补充 | 源码 bulk 拉取全部移到 CI；本地只做小体积操作 | 持续 |
 | R14 | **脚本尚未在真实 Linux / CI 上跑通** | 中 → **部分关闭** | F004 | `fetch-sources.sh` 已在 CI 跑通；`build-kernel.sh` 仍在验证（run #2） | 每次 CI 失败都按日志最小修复并在提交信息记录 |
+| R15 | **31 条 `reg_format` 告警**：CAF 的 SPMI 子节点 `reg` 长度与父节点 `#address-cells/#size-cells` 不匹配 | 中 | F008 §5 | dtb 可编但地址解析存疑；S2 点亮 charger/FG/typec/vadc 前必须逐节点校正并留 dmesg 证据 | S2 第 1 步 |
 
 ## 使用规则
 
