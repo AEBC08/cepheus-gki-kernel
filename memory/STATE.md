@@ -25,6 +25,7 @@
 | #12 | dtbs | ✅ | **首个 `cepheus-sm8150.dtb`**，31 条告警 |
 | #13 | dtbs | ✅ | PNP `#size-cells` 修正后 **31 → 17** 条告警 |
 | #14 | dtbs | ✅ | adsp/gpr cells 修正后 **17 → 2** 条（仅 `trusty.dtsi` 的 ranges_format，D012 记录为接受） |
+| #15 | **Image dtbs** | ✅ | 默认目标改为 `Image dtbs`；同一次 make 同时产出 `Image` 与 `cepheus-sm8150.dtb`；增量构建 54 秒（out+ccache 命中），告警仍为 2 条 |
 
 ## 已确认的关键结论
 
