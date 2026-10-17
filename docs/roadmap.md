@@ -28,7 +28,7 @@
       （实际形态：`Image` + `cepheus-sm8150.dtb`；`dtb.img`/`dtbo.img` 的打包属 ROM 侧，本轮未做）
 - [x] 内核改动的承载机制就位：`kernel/overlay` + `kernel/patches` + `prepare-kernel.sh`（幂等，含 404 防呆）
 - [x] cepheus DTS 在 CI 编出 `cepheus-sm8150.dtb`（run #12），且不影响上游 `sm8150-mtp.dtb`
-- [ ] 31 条 `reg_format` 告警校正（R15，S2 点亮 SPMI 子设备前必须做）
+- [x] DTS 结构告警处置：31 → 2 条，语义类已清零（D012）；剩余 2 条 `trusty.dtsi` ranges_format 已记录接受理由
 - [ ] 实机出现内核日志（UART/pstore/最后内核日志），能定位卡在哪一个驱动
 - [ ] 刷回 4.14 `boot.img` 可完整恢复（回退验证必须做，且记录）
 - [ ] `scripts/checkpatch.pl --strict` 对我们新增/修改的提交 0 error

@@ -13,12 +13,12 @@
 | R7 | **多来源合并成本**：4 棵 4.14 + 1 棵 5.4 + ACK + CAF 同时维护 | 中 | D002/D005 | 4.14 只做 cherry-pick 参考，不设 remote 整树 merge；`ack-5.10` 与 `cepheus-5.10` 分支隔离 | 持续 |
 | R8 | **构建环境**：本机 2C4T/8 GB 且无 Linux | ~~中~~ **已关闭** | F003 | Q001 已决：CI 为主（D004/D006） | 已验证：脚本与 workflow 已落地并通过本机可做的校验 |
 | R9 | **镜像滞后**：ACK 走 GitHub 镜像而非 googlesource | 低 | googlesource 不可达 | 记录 pin 的 commit；需要某补丁时用其它 fork 交叉验证 | 持续 |
-| R10 | **CAF camera 仓库路径/分支未确认** | 低 | `qcom-opensource/camera-kernel` 404 | S1 用 GitLab API 枚举确认正确 project 路径 | S1 第 1 步 |
+| R10 | **audio/camera/video techpack 无 5.10 分支**，只能按 CAF release tag 取（display 有 5.10 分支） | 中 → **已定性** | F009 | 按 F009 §3 的规则选 tag：以 display 5.10 分支为基准找同代 tag，优先 `QSSI/QISI` + waipio 一代；取到后先做编译探针 | S2 接入 techpack 前 |
 | R11 | **面板变体**：cepheus 存在多套 EA8076（f1/f1mp/f1p2…） | 低 | 5.4 树有 5 个面板 dtsi | 沿用 5.4 树的选择逻辑，或 DTBO 内多面板 + 运行时判定（Q009） | S1 第 3 步 |
 | R12 | **`Image` 体积超 boot 分区** | 低中 | 单体 + LTO 关闭时体积上升 | 实测 boot 分区大小；超限则提前模块化或启用 LTO | S1 末 |
 | R13 | **本机网络承载力**：~200 MB 级 git pack 稳定中断（两次实测） | 中 | D006 背景 / F003 补充 | 源码 bulk 拉取全部移到 CI；本地只做小体积操作 | 持续 |
 | R14 | **脚本尚未在真实 Linux / CI 上跑通** | 中 → **部分关闭** | F004 | `fetch-sources.sh` 已在 CI 跑通；`build-kernel.sh` 仍在验证（run #2） | 每次 CI 失败都按日志最小修复并在提交信息记录 |
-| R15 | **31 条 `reg_format` 告警**：CAF 的 SPMI 子节点 `reg` 长度与父节点 `#address-cells/#size-cells` 不匹配 | 中 | F008 §5 | dtb 可编但地址解析存疑；S2 点亮 charger/FG/typec/vadc 前必须逐节点校正并留 dmesg 证据 | S2 第 1 步 |
+| R15 | **DTS `reg_format` 等结构告警**（初始 31 条） | **已关闭** | D012 / run #13–#14 | 语义类全部修正（QPNP `#size-cells`、adsp/gpr cells）；仅余 2 条 `trusty.dtsi` ranges_format，理由见 D012 §2 | 已验证：告警 31 → 2 |
 
 ## 使用规则
 
