@@ -25,14 +25,43 @@ D010 定下的原则是：**overlay 只放新增文件，修改 ACK 既有文件
    （例如 clk 只留 SM8150 系，关掉其它 SoC 的 clk 驱动），避免 CAF 框架替换波及别的平台。
 3. **必须是可回溯的**：commit 信息写清"这是框架级替换（D015）"，与 D010 的 patch 类改动区分开。
 
-## 第一批适用对象（B1a）
+## 第一批适用对象（B1a，实际执行清单）
 
-| 文件 | 类型 | 说明 |
+实测依赖闭包后，B1a 覆盖/新增了 **17 个文件**（均在 `drivers/clk/qcom/`）：
+
+| 文件 | 类型 | 与 ACK 5.10 的差异 |
 |---|---|---|
-| `drivers/clk/qcom/vdd-level.h` | 新增（ACK 无） | `clk_vdd_class`、`DEFINE_VDD_REGULATORS` |
-| `drivers/clk/qcom/clk-alpha-pll.c` | **覆盖** | Trion PLL + vdd 支持 |
-| `drivers/clk/qcom/clk-alpha-pll.h` | **覆盖** | 同上 |
-| `drivers/clk/qcom/vdd-level-sm8150.h` | 新增（已就位） | SM8150 电压级别表 |
+| `clk-regmap.h` | **覆盖** | +54/−7（`struct clk_regmap` 增加 `dependent_hw`/`vdd_data`/`ops`/`flags` 等） |
+| `clk-regmap.c` | **覆盖** | +227/−2（vdd 运行时投票、ops 分发） |
+| `clk-regmap-divider.h` | **覆盖** | +7/−5（增加 `flags`/`table`） |
+| `clk-regmap-divider.c` | **覆盖** | debug 钩子 |
+| `clk-rcg.h` | **覆盖** | +14/−2（`current_freq`/`enable_safe_config`/`flags`） |
+| `clk-rcg2.c` | **覆盖** | +725/−109 |
+| `clk-branch.h` | **覆盖** | +4/−2（新增两个 ops 声明） |
+| `clk-branch.c` | **覆盖** | 对应实现 |
+| `clk-alpha-pll.h` | **覆盖** | +92/−28（Trion PLL 声明） |
+| `clk-alpha-pll.c` | **覆盖** | **+3702/−506**（Trion PLL、vdd 支持、debug 钩子） |
+| `common.h` | **覆盖** | +26/−3 |
+| `common.c` | **覆盖** | +254/−3 |
+| `vdd-class.h` / `vdd-class.c` | **新增**（ACK 无） | 263 + 77 行：电压等级投票核心 |
+| `vdd-level.h` | **新增**（ACK 无） | 31 行：`vdd_levels` 枚举与 corner 表 |
+| `clk-debug.h` / `clk-debug-stub.c` | **新增（我们写的）** | 仅提供 `clk_common_debug_init`、`clk_debug_measure_add` 空实现；见下方说明 |
+
+合计约 **+5100/−660 行**。
+
+### 关于 debug 钩子的取舍
+
+CAF 的 `clk-debug.c`（622 行）还依赖 `<linux/clk/qcom.h>`、`gdsc-debug.h` 等 vendor 头，
+对 bring-up 无价值（只是 debugfs 时钟视图）。因此我们**不移植它**，改为自己写 2 个空实现
+（`clk-debug.h` + `clk-debug-stub.c`），并在 `kernel/patches/0003` 里加入 `clk-qcom-y`。
+
+代价：`/sys/kernel/debug/clk` 下没有 CAF 的扩展测量视图。需要时再整体移植。
+
+### 影响面锁定（D015 约束 2）
+
+- `gki_defconfig` 本身不启用任何 qcom clk 驱动，所以只有我们在
+  `config/bringup-cepheus.config` 里显式列出的 SM8150 系会被编译；
+- 另在该 config 里显式 `# CONFIG_SM_*_8250 is not set`，把"只编译本机型"写成可审计的事实。
 
 ## 风险与控制
 
