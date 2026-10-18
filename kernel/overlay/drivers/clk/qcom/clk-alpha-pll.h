@@ -217,4 +217,13 @@ int clk_lucid_evo_pll_configure(struct clk_alpha_pll *pll,
 int clk_zonda_evo_pll_configure(struct clk_alpha_pll *pll,
 				struct regmap *regmap,
 				const struct alpha_pll_config *config);
+/*
+ * cepheus 兼容层（D015）：ACK android12-5.10 的 gcc-sm8150.c / gpucc-sm8150.c
+ * 沿用上游命名 clk_alpha_pll_[fixed_|postdiv_]trion_ops，而本文件来自 CAF
+ * msm-5.4，同一硬件的 ops 命名为 clk_trion_[fixed_]pll[_postdiv]_ops。
+ * 两者的寄存器序列语义一致，此处仅做符号别名，不改动任何 ops 实现。
+ */
+#define clk_alpha_pll_trion_ops		clk_trion_pll_ops
+#define clk_alpha_pll_fixed_trion_ops	clk_trion_fixed_pll_ops
+#define clk_alpha_pll_postdiv_trion_ops	clk_trion_pll_postdiv_ops
 #endif
