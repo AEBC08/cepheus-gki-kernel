@@ -75,3 +75,14 @@ CAF 的 `clk-debug.c`（622 行）还依赖 `<linux/clk/qcom.h>`、`gdsc-debug.h
 
 D010 仍然有效：**驱动/设备树类修改**继续走 patch；本决策只针对**框架文件**，且必须登记 + 锁影响面。
 两者不冲突：判据是"这个文件是不是被多平台共享的框架"。
+
+## 第二批适用对象（B1a 收尾，run #20/#21 实测追加）
+
+两处，均为"CAF 版驱动要的东西，ACK 上游名字/编号不同"：
+
+| 文件 | 类型 | 理由与影响面 |
+|---|---|---|
+| `drivers/clk/qcom/clk-alpha-pll.h`（已覆盖，本次**追加别名块**） | 覆盖内局部改造 | ACK 自带的 `gcc-sm8150.c`/`gpucc-sm8150.c` 使用上游命名 `clk_alpha_pll_[fixed_|postdiv_]trion_ops`，CAF 版同一硬件叫 `clk_trion_[fixed_]pll[_postdiv]_ops`（run #20 实测 5 处 `use of undeclared identifier`）。只加 3 个 `#define` 符号别名，**不改任何 ops 实现**；影响面 = 引用该头文件的 qcom clk 驱动，且我们已把编译面收敛到 SM8150 系 |
+| `include/dt-bindings/clock/qcom,dispcc-sm8150.h` | **覆盖（新增到 overlay）** | CAF 版 `dispcc-sm8150.c` 需要 `DISP_CC_MDSS_DP_CRYPTO*`/`EDP_*`/`XO_CLK`/`SPDM_BCR` 等 63 个 ID，ACK 上游头文件缺其中 17 个（run #21 实测 17 行 `error:`，全部集中在此文件）。已核对：本项目 DTS 用的 `qcom,dispcc-sm8150-cepheus.h` 与 CAF 原生头 **63 项映射完全一致**，无编号冲突 |
+
+**影响面复核**：`qcom,dispcc-sm8150.h` 的消费者只有 `drivers/clk/qcom/dispcc-sm8150.c`（已被本决策第一批覆盖）与本项目 DTS，ACK 其它平台不使用该头文件。
