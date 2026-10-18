@@ -52,6 +52,10 @@ C2 被否定的证据（GitLab API 实测）：
 
 ## 首批（B1）的具体做法
 
+> **B1 已实测（run #16，见 F011）**：驱动不能直接搬——CAF 扩展了 clk 框架
+> （`vdd-level.h` 的 `DEFINE_VDD_REGULATORS`、`clk-alpha-pll` 的 Trion PLL），
+> ACK 5.10 没有。因此插入前置批次 **B1a：clk 框架扩展前移**（见 D015）。
+
 - 把 5 个 clk 驱动 + `vdd-level-sm8150.h` 放进 `kernel/overlay/drivers/clk/qcom/`
 - 用 `kernel/patches/` 在 `drivers/clk/qcom/{Kconfig,Makefile}` 里登记（patch 而非覆盖）
 - `config/bringup-cepheus.config` 打开对应 `CONFIG_*`（built-in）

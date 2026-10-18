@@ -38,7 +38,8 @@
 | #13 | dtbs | ✅ | QPNP `#size-cells` 修正，告警 31→17 |
 | #14 | dtbs | ✅ | adsp/gpr cells 修正，告警 17→2 |
 | #15 | Image dtbs | ✅ | 默认目标切为 `Image dtbs`，两者共存；增量 54 秒 |
-| 5.4 #1 | 基线 | ⏳ | 用该树自带脚本构建（LTO 已由 CI 关闭），进行中 |
+| 5.4 #1 | 基线 | ✅ | **用该树自带脚本构建成功**：27 分 28 秒（LTO 已关），产物 `kernel`/`kernel_dtb`/`dtbo.img`，artifact 20.99 MB（F012） |
+| #16 | Image | ❌ | B1 时钟批次：60 行 error，根因是缺 CAF clk 框架扩展（`vdd-level.h`、Trion PLL）→ 引出 B1a 与 D015（F011） |
 
 ## 下一步（取决于 D013 决策）
 
