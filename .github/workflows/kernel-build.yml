@@ -123,6 +123,21 @@ jobs:
           echo "== 磁盘 ==";        df -h /
           echo "== 源码体积 ==";    du -sh src/kernel src/techpack 2>/dev/null || true
 
+      - name: display techpack 取证（B4）
+        if: inputs.with_display_techpack == '1'
+        run: |
+          set -euo pipefail
+          T=src/kernel/drivers/techpack/display
+          echo "== 顶层文件 =="; ls -1 "$T"
+          echo "== 所有 Makefile / Kbuild / *.mk（深度 3）=="
+          find "$T" -maxdepth 3 \( -name Makefile -o -name Kbuild -o -name '*.mk' \) | sort
+          echo "== 所有 obj- 规则（前 80 行）=="
+          grep -rn --include=Kbuild --include=Makefile --include='*.mk' '\bobj-' "$T" | head -80 || true
+          echo "== msm/{sde,dsi,dp} 里构建规则文件数 =="
+          for d in msm msm/sde msm/dsi msm/dp; do
+            n=$(ls "$T/$d" 2>/dev/null | grep -Ec '^(Kbuild|Makefile)$' || true)
+            printf '  %-10s : %s\n' "$d" "${n:-0}"
+          done
       - name: 构建
         env:
           DEFCONFIG: ${{ inputs.defconfig || 'gki_defconfig' }}
