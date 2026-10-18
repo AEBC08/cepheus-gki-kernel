@@ -16,6 +16,9 @@
 | Q011 | **基线路线**：A=改 DT 迎合 ACK 上游驱动（只能到"进 init、黑屏"）／C=以 5.4 vendor 栈为基线做 5.4→5.10 前移（有机会"能用"） | **已决(见 D013)** | 用户选 C；落地形态见 D014，框架级覆盖规则见 D015。B1a/B1 已完成（F013，run #22） |
 | Q010 | 推送认证：A 用户给 fine-grained PAT / B 用户 `gh auth login` / C 用户自行 push | **已决(见 D007)** | 未用 A/B/C：本机 GCM 已有缓存凭据（system 级 `credential.helper=manager`，我在第一轮只查了 global），故由 PI-Desktop 直接建仓并推送 |
 
+| Q012 | **B4 display 的落地形态**：内建（与 ACK `CONFIG_DRM_MSM` 撞名，判定不可行）／外部模块 `.ko`（D016，需解决 KMI 导出） | **已决(见 D016)** | 量化证据见 F016；模块化路线转入 S2 实施 |
+| Q013 | **interconnect 运行时 ID 映射**：DT 里仍是 CAF 全局编号，ACK 期望 provider 内索引 | **搁置（真机验证时定）** | 只影响 bw 投票，不影响能否启动；改造成本 = 9 个 provider 映射 + 32 处 DT 引用（F015 §4） |
+
 ## 处理规则
 
 - 每个待决问题在解决后，写对应 `decisions/Dnnn`，并在此表把状态改为 `已决(见 Dnnn)`。
