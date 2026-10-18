@@ -1,0 +1,83 @@
+soc: qcom: llcc: 增加 SM8150 的切片表与 binding
+
+ACK android12-5.10 的 llcc-qcom.c 是完整实现（probe/activate/edac），
+但只带 sc7180 与 sdm845 两张表，DT 里的 "qcom,sm8150-llcc" 无人绑定（R17）。
+
+本补丁只做两件事，不动驱动逻辑：
+  1. 增加 sm8150_data[] 与 sm8150_cfg。数据来自 CAF msm-5.4
+     drivers/soc/qcom/llcc-sm8150.c，去掉 CAF 独有的 write_scid_en 字段
+     （ACK 的 struct llcc_slice_config 只有 12 个成员，CAF 是 13 个）。
+  2. 把 "qcom,sm8150-llcc" 加进 qcom_llcc_of_match。
+
+另外 llcc-qcom.h 补齐 SM8150 表用到的 6 个用例 ID（MDMHW/NPU/WLNHW/
+MDMVPE/APTCM/WRTCH），编号沿用 CAF，与 ACK 已有的 ID 不冲突。
+
+DT 节点结构（reg-names = llcc_base / llcc_broadcast_base）与 ACK probe
+期望完全一致，因此无需改 DT。
+
+Signed-off-by: AEBC08 <743727279@qq.com>
+---
+diff --git a/drivers/soc/qcom/llcc-qcom.c b/drivers/soc/qcom/llcc-qcom.c
+index 8cf7b14..168792d 100644
+--- a/drivers/soc/qcom/llcc-qcom.c
++++ b/drivers/soc/qcom/llcc-qcom.c
+@@ -91,6 +91,34 @@ struct qcom_llcc_config {
+ 	int size;
+ };
+ 
++static const struct llcc_slice_config sm8150_data[] = {
++	{ LLCC_CPUSS,     1,  3072, 1, 1, 0xFFF, 0x0,   0, 0, 0, 1, 1 },
++	{ LLCC_VIDSC0,    2,  512,  2, 1, 0xFFF, 0x0,   0, 0, 0, 1, 0 },
++	{ LLCC_VIDSC1,    3,  512,  2, 1, 0xFFF, 0x0,   0, 0, 0, 1, 0 },
++	{ LLCC_AUDIO,     6,  1024, 1, 1, 0xFFF, 0x0,   0, 0, 0, 1, 0 },
++	{ LLCC_MDMHPGRW,  7,  3072, 1, 0, 0xFF,  0xF00, 0, 0, 0, 1, 0 },
++	{ LLCC_MDM,       8,  3072, 1, 1, 0xFFF, 0x0,   0, 0, 0, 1, 0 },
++	{ LLCC_MDMHW,     9,  1024, 1, 1, 0xFFF, 0x0,   0, 0, 0, 1, 0 },
++	{ LLCC_CMPT,      10, 3072, 1, 1, 0xFFF, 0x0,   0, 0, 0, 1, 0 },
++	{ LLCC_GPUHTW,    11, 512,  1, 1, 0xFFF, 0x0,   0, 0, 0, 1, 0 },
++	{ LLCC_GPU,       12, 2560, 1, 1, 0xFFF, 0x0,   0, 0, 0, 1, 0 },
++	{ LLCC_MMUHWT,    13, 1024, 1, 1, 0xFFF, 0x0,   0, 0, 0, 0, 1 },
++	{ LLCC_CMPTDMA,   15, 3072, 1, 1, 0xFFF, 0x0,   0, 0, 0, 1, 0 },
++	{ LLCC_DISP,      16, 3072, 1, 1, 0xFFF, 0x0,   0, 0, 0, 1, 0 },
++	{ LLCC_MDMHPFX,   20, 1024, 2, 1, 0xFFF, 0x0,   0, 0, 0, 1, 0 },
++	{ LLCC_MDMPNG,    21, 1024, 0, 1, 0xF,   0x0,   0, 0, 0, 1, 0 },
++	{ LLCC_AUDHW,     22, 1024, 1, 1, 0xFFF, 0x0,   0, 0, 0, 1, 0 },
++	{ LLCC_NPU,       23, 3072, 1, 1, 0xFFF, 0x0,   0, 0, 0, 1, 0 },
++	{ LLCC_WLNHW,     24, 3072, 1, 1, 0xFFF, 0x0,   0, 0, 0, 1, 0 },
++	{ LLCC_MDMVPE,    29, 256,  1, 1, 0xF,   0x0,   0, 0, 0, 1, 0 },
++	{ LLCC_APTCM,     30, 256,  3, 1, 0x0,   0x1,   1, 0, 0, 0, 0 },
++	{ LLCC_WRTCH,     31, 128,  1, 1, 0xFFF, 0x0,   0, 0, 0, 0, 0 },
++};
++
++static const struct qcom_llcc_config sm8150_cfg = {
++	.sct_data	= sm8150_data,
++	.size		= ARRAY_SIZE(sm8150_data),
++};
+ static const struct llcc_slice_config sc7180_data[] =  {
+ 	{ LLCC_CPUSS,    1,  256, 1, 0, 0xf, 0x0, 0, 0, 0, 1, 1 },
+ 	{ LLCC_MDM,      8,  128, 1, 0, 0xf, 0x0, 0, 0, 0, 1, 0 },
+@@ -496,6 +524,7 @@ err:
+ 
+ static const struct of_device_id qcom_llcc_of_match[] = {
+ 	{ .compatible = "qcom,sc7180-llcc", .data = &sc7180_cfg },
++	{ .compatible = "qcom,sm8150-llcc", .data = &sm8150_cfg },
+ 	{ .compatible = "qcom,sdm845-llcc", .data = &sdm845_cfg },
+ 	{ }
+ };
+diff --git a/include/linux/soc/qcom/llcc-qcom.h b/include/linux/soc/qcom/llcc-qcom.h
+index 90b8646..7825103 100644
+--- a/include/linux/soc/qcom/llcc-qcom.h
++++ b/include/linux/soc/qcom/llcc-qcom.h
+@@ -25,6 +25,12 @@
+ #define LLCC_VIDFW       17
+ #define LLCC_MDMHPFX     20
+ #define LLCC_MDMPNG      21
++#define LLCC_MDMHW       9
++#define LLCC_NPU         23
++#define LLCC_WLNHW       24
++#define LLCC_MDMVPE      29
++#define LLCC_APTCM       30
++#define LLCC_WRTCH       31
+ #define LLCC_AUDHW       22
+ 
+ /**

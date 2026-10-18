@@ -14,3 +14,13 @@
 
 覆盖整个 `arch/arm64/boot/dts/Makefile` 之类的大文件，会在上游更新时把新内容整体冲掉，
 且 diff 里看不出我们到底加了哪一行。patch 能精确保留意图。
+
+## 补丁清单
+
+| 文件 | 改的是 | 目的 |
+|---|---|---|
+| `0001-arm64-dts-hook-xiaomi-subdir.patch` | `arch/arm64/boot/dts/Makefile` | 把 overlay 的 xiaomi 设备树子目录挂进构建 |
+| `0002-clk-qcom-register-sm8150-controllers.patch` | `drivers/clk/qcom/{Kconfig,Makefile}` | 注册 camcc/dispcc/npucc/scc-sm8150 四个控制器 |
+| `0003-clk-qcom-wire-vdd-class-and-debug-stub.patch` | `drivers/clk/qcom/Makefile` | 接入 CAF vdd-class 与 clk-debug 桩 |
+| `0004-clk-qcom-wire-opp-stub.patch` | `drivers/clk/qcom/Makefile` | 接入 clk-opp 桩 |
+| `0005-soc-qcom-llcc-add-sm8150-table.patch` | `drivers/soc/qcom/llcc-qcom.c`、`include/linux/soc/qcom/llcc-qcom.h` | 为 LLCC 增加 SM8150 切片表与 binding（B3，R17） |
