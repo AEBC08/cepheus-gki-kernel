@@ -1,0 +1,126 @@
+# 复现 5.4 前移树的构建产物（参照基线）
+#
+# 目的（见 memory/decisions/D013-baseline-route.md 的 S1'）：
+#   qaz6750/android_kernel_xiaomi_sm8150@android-5.4.y 是一份**作者已实机启动 HyperOS 2
+#   并跑通指纹/面容**的 SM8150 树（ACK android11-5.4 + CAF LAHAINA msm-5.4 vendor 栈）。
+#   先在 CI 把它自己的产物复现出来，作为"已知可启动"的参照物；
+#   后续无论走"DT 迎合上游"还是"5.4→5.10 前移"，都以此作为对照基线。
+#
+# 该树自带 build_kernel.sh（DEFCONFIG=vendor/sm8150-qgki_defconfig, DEVICE=cepheus），
+# 因此这里只负责拉源码 + 装工具链 + 调它的脚本，不掺入我们自己的脚本逻辑。
+
+name: kernel-5.4-baseline
+
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: '要构建的分支'
+        required: false
+        default: 'android-5.4.y'
+      lto:
+        description: '保留该树的 LTO 设置（1）还是关闭以加速（0）'
+        required: false
+        default: '0'
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 180
+
+    steps:
+      - name: Checkout 控制仓库
+        uses: actions/checkout@v4
+
+      - name: 释放磁盘空间
+        run: |
+          set -euo pipefail
+          df -h /
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc \
+                      /usr/local/share/boost "$AGENT_TOOLSDIRECTORY" || true
+          df -h /
+
+      - name: 安装构建依赖
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            clang lld llvm \
+            gcc-aarch64-linux-gnu binutils-aarch64-linux-gnu \
+            bc bison flex libssl-dev libelf-dev \
+            cpio kmod rsync zip xz-utils ccache
+          clang --version | head -n1
+
+      - name: 恢复 5.4 源码缓存
+        uses: actions/cache@v4
+        with:
+          path: src/kernel-5.4
+          key: kernel54-${{ inputs.ref || 'android-5.4.y' }}-v1
+          restore-keys: |
+            kernel54-
+
+      - name: 拉取 5.4 前移树
+        env:
+          REF: ${{ inputs.ref || 'android-5.4.y' }}
+        run: |
+          set -euo pipefail
+          if [ -d src/kernel-5.4/.git ]; then
+            echo "已缓存，检查分支"
+            git -C src/kernel-5.4 rev-parse --abbrev-ref HEAD || true
+          else
+            mkdir -p src
+            git -c http.version=HTTP/1.1 clone --depth 1 --single-branch \
+              --branch "${REF}" \
+              https://github.com/qaz6750/android_kernel_xiaomi_sm8150 src/kernel-5.4
+          fi
+          echo "== 版本 =="
+          grep -E '^(VERSION|PATCHLEVEL|SUBLEVEL) =' src/kernel-5.4/Makefile
+          echo "== HEAD =="
+          git -C src/kernel-5.4 log -1 --format='%H %ci %s'
+
+      - name: 可选关闭 LTO（默认关闭以加速基线构建）
+        if: inputs.lto != '1'
+        run: |
+          set -euo pipefail
+          CFG=src/kernel-5.4/arch/arm64/configs/vendor/xiaomi/cepheus.config
+          if [ -f "${CFG}" ]; then
+            printf '\n# 由 CI 追加：关闭 full LTO 以缩短基线构建时间（不属于作者原配方）\n# CONFIG_LTO_CLANG is not set\n# CONFIG_LTO is not set\n' >> "${CFG}"
+            echo "已追加到 ${CFG}:"
+            tail -n4 "${CFG}"
+          else
+            echo "未找到 ${CFG}，跳过" >&2
+          fi
+
+      - name: 用该树自带脚本构建
+        env:
+          DEFCONFIG: vendor/sm8150-qgki_defconfig
+          DEVICE: cepheus
+          JOBS: 4
+          OUT_DIR: ${{ github.workspace }}/out-5.4
+          CCACHE_DIR: ${{ github.home }}/.ccache
+        run: |
+          set -euo pipefail
+          export CCACHE_DIR="${HOME}/.ccache"
+          export CCACHE_MAXSIZE=2G
+          echo "== 构建前资源 =="
+          nproc; free -m | head -n2; df -h /
+          bash src/kernel-5.4/build_kernel.sh
+
+      - name: 列出产物
+        if: always()
+        run: |
+          set -euo pipefail
+          df -h /
+          ls -la out-5.4/boot 2>/dev/null || echo "无 out-5.4/boot"
+          find out-5.4 -maxdepth 3 -name 'Image*' -o -maxdepth 3 -name '*.img' 2>/dev/null | head -20
+
+      - name: 上传产物
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: kernel-5.4-baseline-${{ github.run_number }}
+          retention-days: 30
+          path: out-5.4/boot/
