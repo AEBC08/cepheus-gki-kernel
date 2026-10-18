@@ -29,6 +29,10 @@ on:
         description: '启用 ccache（1/0）'
         required: false
         default: '1'
+      with_display_techpack:
+        description: '接入 CAF techpack/display 参与编译（1/0）'
+        required: false
+        default: '0'
   push:
     branches:
       - cepheus-5.10
@@ -104,8 +108,9 @@ jobs:
         run: |
           set -euo pipefail
           bash scripts/fetch-sources.sh
-
       - name: 准备内核改动（overlay + patches）
+        env:
+          WITH_DISPLAY_TECHPACK: ${{ inputs.with_display_techpack || '0' }}
         run: |
           set -euo pipefail
           bash scripts/prepare-kernel.sh

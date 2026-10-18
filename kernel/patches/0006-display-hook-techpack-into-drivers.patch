@@ -1,0 +1,33 @@
+display: 把 CAF techpack/display 挂进 drivers/ 的构建入口（B4）
+
+CAF 的 display 驱动（display-drivers，分支 display-kernel.lnx.5.10.r8-rel）
+自带 Kbuild，入口是 obj-$(CONFIG_DRM_MSM) += msm/，并把
+$(srctree)/techpack/display 当作 DISPLAY_ROOT。
+
+ACK android12-5.10 的 drivers/Makefile 里没有任何 techpack 入口。本补丁在
+drivers/ 末尾加一行子目录入口，指向 drivers/techpack/display。
+
+为什么放在 drivers/techpack/display 而不是树根的 techpack/：
+kbuild 的 obj-y 只按子目录递归，obj-y += ../xxx/ 这种跨父目录的写法在
+5.10 的 Makefile.build 里不会被当作子目录处理。放在 drivers/ 内部最稳妥，
+且 prepare-kernel.sh 复制时会把 DISPLAY_ROOT 指到这个位置。
+
+约定（D010）：techpack 源码不入库、不修改；本补丁只增加入口，
+用 CONFIG_DISPLAY_BUILD 作总开关，默认不开启，不影响 Image/dtbs 基线。
+
+Signed-off-by: AEBC08 <743727279@qq.com>
+---
+diff --git a/drivers/Makefile b/drivers/Makefile
+index 5762280..18d6c15 100644
+--- a/drivers/Makefile
++++ b/drivers/Makefile
+@@ -189,3 +189,9 @@ obj-$(CONFIG_GNSS)		+= gnss/
+ obj-$(CONFIG_INTERCONNECT)	+= interconnect/
+ obj-$(CONFIG_COUNTER)		+= counter/
+ obj-$(CONFIG_MOST)		+= most/
++
++# cepheus B4（D010）：CAF display techpack 的构建入口。
++# 源码由 scripts/prepare-kernel.sh 从 src/techpack/display-drivers 复制到
++# drivers/techpack/display（放在内核树内部，kbuild 才会当子目录处理）。
++# 默认关闭（CONFIG_DISPLAY_BUILD 未开），不影响 Image/dtbs 基线。
++obj-$(CONFIG_DISPLAY_BUILD)	+= techpack/display/

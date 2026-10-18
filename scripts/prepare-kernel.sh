@@ -58,8 +58,51 @@ main() {
   apply_overlay
   sanity_check_overlay
   apply_patches "${patches[@]+"${patches[@]}"}"
+  wire_display_techpack
   write_prep_info "${#patches[@]}"
   log "完成"
+}
+
+# B4：把 CAF techpack/display 接进内核构建（默认关闭，CI 用 WITH_DISPLAY_TECHPACK=1 打开）。
+#
+# 接入方式（D010：驱动源码不改，只加"入口"）：
+#   1. 把 src/techpack/display-drivers 软链/复制到内核树的 techpack/display
+#      （CAF 的 display 驱动假定自己在 techpack/display，头文件用相对包含）；
+#   2. 在 drivers/Makefile 末尾追加 obj-y += ../../techpack/display/ —— 用 patch 表达，
+#      见 kernel/patches/0006-*.patch；
+#   3. 由 config/bringup-display.config 打开 CONFIG_TECHPACK_DISPLAY 等开关。
+#
+# 之所以默认关闭：display 驱动是整套 vendor 子系统（msm/sde/dsi/edrm），
+# 与 ACK 核心的 API 差异需要逐轮收敛，不能污染 Image/dtbs 的稳定基线。
+wire_display_techpack() {
+  local want=${WITH_DISPLAY_TECHPACK:-0}
+  local src_dir=${TECH_DIR:-${REPO_ROOT}/src/techpack}/display-drivers
+  local dst_dir="${KERNEL_DIR}/drivers/techpack/display"
+
+  if [ "${want}" != "1" ]; then
+    log "跳过 display techpack（WITH_DISPLAY_TECHPACK=0）"
+    return 0
+  fi
+
+  [ -d "${src_dir}" ] || die "未找到 display techpack：${src_dir}（检查 TECH_BRANCH_DISPLAY 与 fetch-sources.sh）"
+
+  # 用复制而不是软链：内核的 Kbuild 对软链目录的处理在不同版本上不一致，
+  # 复制一份更可预期，代价是多占一份磁盘（runner 上已释放空间）。
+  log "接入 display techpack：${src_dir} -> ${dst_dir}"
+  mkdir -p "$(dirname -- "${dst_dir}")"
+  rm -rf -- "${dst_dir}"
+  # 排除 .git（几十 MB）与 CI 不需要的预编译产物
+  if command -v rsync >/dev/null 2>&1; then
+    rsync -a --exclude='.git' "${src_dir}/" "${dst_dir}/"
+  else
+    mkdir -p "${dst_dir}"
+    ( cd "${src_dir}" && tar -cf - --exclude='.git' . ) | ( cd "${dst_dir}" && tar -xf - )
+  fi
+
+  local fw
+  fw=$(git -C "${src_dir}" rev-parse HEAD 2>/dev/null || echo unknown)
+  printf 'display            = %s\n' "${fw}" >> "${KERNEL_DIR}/.cepheus-prep"
+  log "display techpack HEAD = ${fw}"
 }
 
 # 防呆：overlay 里若存在「404: Not Found」这类 HTTP 错误体（曾因 curl 批量下载踩到），
