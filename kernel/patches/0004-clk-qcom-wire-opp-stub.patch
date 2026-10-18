@@ -1,0 +1,21 @@
+clk: qcom: 为 clk OPP 表的 bring-up 桩增加构建入口
+
+CAF 的 common.c 在注册时钟时调用 clk_hw_populate_clock_opp_table()；
+完整实现（clk-opp.c）在 bring-up 阶段不需要，我们用空实现替代
+（见 kernel/overlay/drivers/clk/qcom/clk-opp.h 的取舍说明）。
+本补丁把该桩加入 clk-qcom 聚合目标。
+
+Signed-off-by: AEBC08 <743727279@qq.com>
+---
+diff --git a/drivers/clk/qcom/Makefile b/drivers/clk/qcom/Makefile
+index 603f3e3..1903f14 100644
+--- a/drivers/clk/qcom/Makefile
++++ b/drivers/clk/qcom/Makefile
+@@ -16,6 +16,7 @@ clk-qcom-y += clk-hfpll.o
+ clk-qcom-y += reset.o
+ clk-qcom-y += vdd-class.o
+ clk-qcom-y += clk-debug-stub.o
++clk-qcom-y += clk-opp-stub.o
+ clk-qcom-$(CONFIG_QCOM_GDSC) += gdsc.o
+ 
+ # Keep alphabetically sorted by config
