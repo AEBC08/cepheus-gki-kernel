@@ -1,56 +1,67 @@
 # 项目状态快照
 
-- **更新时间**：2026-10-18 05:55 (+08:00)
-- **当前阶段**：**S1 收尾** —— `Image` 与 `cepheus-sm8150.dtb` 均稳定产出，DTS 语义类告警已清零；下一阶段进入 S2 驱动点亮
+- **更新时间**：2026-10-18 07:10 (+08:00)
+- **当前阶段**：**战略决策点** —— 发现 DT 与上游驱动体系不兼容（F010），需在路线 A / C 之间选择（D013，待拍板）
 - **目标**：cepheus 运行 ACK `android12-5.10` GKI 2.0 内核，服务类原生 ROM（终极目标 Infinity X / Android 17）
 
-## 仓库与流水线（已验证）
+## 本轮新增的关键认知（F010，已验证）
+
+我们的 cepheus DT 用的是 **CAF 私有 compatible 命名**，ACK 5.10 上游驱动只认上游命名，**绑定层不兼容**：
+
+| 子系统 | 我们 DT | ACK 驱动只认 |
+|---|---|---|
+| geni-se | `qcom,qupv3-geni-se` | `qcom,geni-se-qup` |
+| geni 串口 | `qcom,msm-geni-serial-hs` | `qcom,geni-uart` |
+| tsens | `qcom,tsens24xx` | `qcom,tsens-v2` |
+| LLCC | `qcom,sm8150-llcc` | `qcom,sc7180-llcc` |
+| UFS/USB PHY | `ufs-phy-qmp-v4` / `usb-ssphy-qmp-v2` | `sm8150-qmp-*` 体系 |
+| SMMU | `qsmmu-v500` / `ipa-smmu-*` / `kgsl-smmu-v2` | `qcom,smmu-v2` |
+
+且上游 5.10 **完全没有** SM8150 的显示（DPU 无 sm8 文件）、相机、kgsl(GPU)、充电驱动。
+→ 结论：「能构建」到「能适配」之间隔的是**整套 vendor 驱动栈**，不是几个 CONFIG。
+
+## 仓库与流水线
 
 | 项 | 值 |
 |---|---|
 | GitHub | `https://github.com/AEBC08/cepheus-gki-kernel`（公开） |
-| 提交身份 | `AEBC08 <743727279@qq.com>`（仓库级） |
-| 源码定版 | ACK `android12-5.10` @ `9360e0b02a7f…`（仓库变量 `ACK_SHA`） |
-| 源码快照 | Release `sources-9360e0b02a7f`（172.3 MB） |
-| 内核改动 | `kernel/overlay/`（123 文件 / 1.08 MB）+ `kernel/patches/0001` |
-| 稳定构建配方 | `gki_defconfig` + `config/bringup-lite.config`，clang 14，`LLVM=1 LLVM_IAS=1 CROSS_COMPILE=aarch64-linux-gnu-`，`-j4` |
+| workflows | `bootstrap-sources`(387749275)、`kernel-build`(387749276)、**`kernel-5.4-baseline`(388069868)** |
+| 源码定版 | ACK `android12-5.10` @ `9360e0b02a7f…`（变量 `ACK_SHA`） |
+| 内核改动 | `kernel/overlay/`（123 文件）+ `kernel/patches/0001` |
+| 已验证产出 | `Image` 29.9 MB；`cepheus-sm8150.dtb`（DTS 告警 31→2，D012） |
+| 5.4 基线 | run #1 进行中：复现 `qaz6750@android-5.4.y` 的产物作为"已知可启动"参照 |
 
-## 运行历史（真实，节选）
+## 运行历史（本轮新增）
 
 | run | 目标 | 结果 | 结论 |
 |---|---|---|---|
-| #6 | Image | ✅ | 首次产出 `Image` 29.9 MB（18 分 13 秒），F007 |
-| #7 | Image dtbs | ✅ | dtb 管线 + prepare 步骤验证 |
-| #8–#11 | dtbs | ❌ | 缺 dt-bindings → 覆盖上游头 → 404 假文件 → 再缺头（F008） |
-| #12 | dtbs | ✅ | **首个 `cepheus-sm8150.dtb`**，31 条告警 |
-| #13 | dtbs | ✅ | PNP `#size-cells` 修正后 **31 → 17** 条告警 |
-| #14 | dtbs | ✅ | adsp/gpr cells 修正后 **17 → 2** 条（仅 `trusty.dtsi` 的 ranges_format，D012 记录为接受） |
-| #15 | **Image dtbs** | ✅ | 默认目标改为 `Image dtbs`；同一次 make 同时产出 `Image` 与 `cepheus-sm8150.dtb`；增量构建 54 秒（out+ccache 命中），告警仍为 2 条 |
+| #13 | dtbs | ✅ | QPNP `#size-cells` 修正，告警 31→17 |
+| #14 | dtbs | ✅ | adsp/gpr cells 修正，告警 17→2 |
+| #15 | Image dtbs | ✅ | 默认目标切为 `Image dtbs`，两者共存；增量 54 秒 |
+| 5.4 #1 | 基线 | ⏳ | 用该树自带脚本构建（LTO 已由 CI 关闭），进行中 |
 
-## 已确认的关键结论
+## 下一步（取决于 D013 决策）
 
-1. 内核改动走 overlay + patch，`prepare-kernel.sh` 幂等并含 404 假文件防呆。
-2. ACK 5.10 自带上游 SM8150 支持；CAF 平台层放 `xiaomi/` 同目录，不动上游 `qcom/sm8150.dtsi`。
-3. CAF dt-bindings 一律 `-cepheus` 私有后缀；依赖用本地递归 BFS 一次闭合（30 个头）。
-4. DTS 告警处置有明确准则（D012）：语义类（reg/cells/ranges）必修，提示类需写明理由才可接受。
-5. techpack 来源（F009）：**display 有 5.10 分支**；**audio / camera / video 只有 release tag**，必须按 tag 选型。
+### 若选 C（以 vendor 栈为基线，建议）
+1. 等 5.4 基线构建成功 → 得到"已知可启动"的 Image 与 DT 作为参照。
+2. 规划 5.4 → 5.10 前移：先做"内核核心换成 ACK android12-5.10 + vendor 栈跟随适配"，
+   按子系统分批（时钟/pinctrl/rpmh → UFS → 显示 → 触摸/充电 → 音频 → 相机）。
+3. 我们的 overlay/patch 机制、告警准则、`-cepheus` 头策略继续沿用。
 
-## 下一步（按序）
-
-1. **S2 第 1 步（真机前）**：确认 `TARGETS="Image dtbs"` 作为默认目标；把 `cepheus-sm8150.dtb` 打包进 boot/dtbo 的流程确定下来（ROM 侧配合）。
-2. **techpack：先接 display**（分支已确认 `display-kernel.lnx.5.10.r8-rel`），验证 `techpack/display` 能编进内核。
-3. **audio/camera/video 的 tag 选型**（R10 未关闭）：按 F009 §3 的规则挑 tag，先做"能否编译"的探针。
-4. 真机首启（等用户安排；Q002 已具备 9008 条件）。
+### 若选 A（改 DT 迎合上游）
+1. 把 geni/tsens/LLCC/PHY/SMMU/interconnect 节点改写为上游命名与属性。
+2. 明确接受阶段结论：**进 init、黑屏**（显示/相机/音频/GPU/充电无驱动）。
+3. 修订 D001/D011。
 
 ## 阻塞项
 
 | 编号 | 内容 | 影响 | 需要谁 |
 |---|---|---|---|
+| **D013** | 路线 A / C 未定 | 后续所有工作量分配 | **用户拍板** |
 | Q002-刷机 | 设备可刷、可 9008，暂不刷 | 实机验证推迟 | 用户择机 |
-| Q005 | 相机 UAPI 策略未定 | S2 相机阶段方向 | 用户（相机接入前） |
-| R10 | audio/camera/video 走 tag，具体 tag 未定 | 三个 techpack 未拉取 | 下一轮按 F009 规则选型 |
+| Q005 | 相机 UAPI 策略未定 | 相机阶段方向 | 用户 |
 
 ## 本机能力边界
 
-- 能：git、Actions API 全套、本地 blob:none 克隆取文件、脚本 `bash -n` / `--check`、YAML 校验、DTS 静态分析。
-- 不能：本机编译内核；大 pack 拉取/推送；`raw.githubusercontent.com` 批量下载不稳（须校验内容 + 克隆兜底）。
+- 能：git、Actions API、本地 blob:none 克隆、脚本校验、DT/驱动 compatible 静态比对。
+- 不能：本机编译内核；大 pack 拉取/推送；raw 批量下载不稳。

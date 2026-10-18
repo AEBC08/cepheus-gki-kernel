@@ -13,6 +13,7 @@
 | Q007 | 代码托管：项目控制仓库放哪里 | **已决(见 D007)** | 已推送至公开仓库 `AEBC08/cepheus-gki-kernel`，默认分支 `main` |
 | Q008 | S1 首启验证用哪个 ROM 组合：crDroid 17.0 还是直接 Infinity X | **待决** | 5.4 作者已验证 HyperOS 2，类原生理论上更简单；建议先用 crDroid 17.0 收敛 |
 | Q009 | 屏幕/面板变体：cepheus 有多套 EA8076 面板 dtsi（f1/f1mp/f1p2 等），是否需要运行时判定 | **待决（S1 调研）** | 影响 DTS 与 DTBO 组织方式 |
+| Q011 | **基线路线**：A=改 DT 迎合 ACK 上游驱动（只能到"进 init、黑屏"）／C=以 5.4 vendor 栈为基线做 5.4→5.10 前移（有机会"能用"） | **待决（阻塞后续全部工作）** | 见 D013 + F010 的量化证据；PI-Desktop 建议 C |
 | Q010 | 推送认证：A 用户给 fine-grained PAT / B 用户 `gh auth login` / C 用户自行 push | **已决(见 D007)** | 未用 A/B/C：本机 GCM 已有缓存凭据（system 级 `credential.helper=manager`，我在第一轮只查了 global），故由 PI-Desktop 直接建仓并推送 |
 
 ## 处理规则
