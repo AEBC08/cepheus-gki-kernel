@@ -1,0 +1,61 @@
+clk: qcom: register SM8150 camcc/dispcc/npucc/scc controllers
+
+ACK 5.10 自带 gcc/gpucc/videocc-sm8150，但缺 camcc/dispcc/npucc/scc 四个。
+本补丁只在 Kconfig 与 Makefile 里登记，驱动源码由 kernel/overlay 提供
+（源自 5.4 前移树，见 memory/decisions/D014-route-c-implementation.md 的 B1 批次）。
+
+插在 Kconfig 的 endif 之前，保持文件原有结构（配置项仍在同一 menu/if 内）。
+
+Signed-off-by: AEBC08 <743727279@qq.com>
+---
+diff --git a/drivers/clk/qcom/Kconfig b/drivers/clk/qcom/Kconfig
+index 3998e25..a32e047 100644
+--- a/drivers/clk/qcom/Kconfig
++++ b/drivers/clk/qcom/Kconfig
+@@ -503,4 +503,34 @@ config KRAITCC
+ 	  Support for the Krait CPU clocks on Qualcomm devices.
+ 	  Say Y if you want to support CPU frequency scaling.
+ 
++config SM_CAMCC_8150
++	tristate "SM8150 Camera Clock Controller"
++	select SM_GCC_8150
++	help
++	  Support for the camera clock controller on SM8150 devices.
++	  Say Y if you want to support camera devices and functionality such
++	  as capturing images.
++
++config SM_DISPCC_8150
++	tristate "SM8150 Display Clock Controller"
++	select SM_GCC_8150
++	help
++	  Support for the display clock controller on SM8150 devices.
++	  Say Y if you want to support display devices and functionality such
++	  as splash screen.
++
++config SM_NPUCC_8150
++	tristate "SM8150 NPU Clock Controller"
++	select SM_GCC_8150
++	help
++	  Support for the NPU clock controller on SM8150 devices.
++	  Say Y if you want to support the neural processing unit.
++
++config SM_SCC_8150
++	tristate "SM8150 SCC Clock Controller"
++	select SM_GCC_8150
++	help
++	  Support for the sensor clock controller on SM8150 devices.
++	  Say Y if you want to support sensor-related clocks.
++
+ endif
+diff --git a/drivers/clk/qcom/Makefile b/drivers/clk/qcom/Makefile
+index 11ae86f..e5dd357 100644
+--- a/drivers/clk/qcom/Makefile
++++ b/drivers/clk/qcom/Makefile
+@@ -75,3 +75,7 @@ obj-$(CONFIG_SPMI_PMIC_CLKDIV) += clk-spmi-pmic-div.o
+ obj-$(CONFIG_KPSS_XCC) += kpss-xcc.o
+ obj-$(CONFIG_QCOM_HFPLL) += hfpll.o
+ obj-$(CONFIG_KRAITCC) += krait-cc.o
++obj-$(CONFIG_SM_CAMCC_8150) += camcc-sm8150.o
++obj-$(CONFIG_SM_DISPCC_8150) += dispcc-sm8150.o
++obj-$(CONFIG_SM_NPUCC_8150) += npucc-sm8150.o
++obj-$(CONFIG_SM_SCC_8150) += scc-sm8150.o
